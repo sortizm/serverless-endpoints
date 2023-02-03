@@ -1,0 +1,10 @@
+{
+  "name": "serverless-endpoints",
+  "version": "1.0.0",
+  "description": "",
+  "dependencies": {
+    "serverless": "^3.27.0",
+    "serverless-prune-plugin": "^2.0.1",
+    "serverless-python-requirements": "^6.0.0"
+  }
+}
