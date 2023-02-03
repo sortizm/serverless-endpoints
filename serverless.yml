@@ -1,0 +1,71 @@
+service: serverless-endpoints
+frameworkVersion: '3'
+package:
+  patterns:
+    - '!./**'
+    - 'serverless_endpoints/**'
+
+provider:
+  name: aws
+  runtime: python3.9
+  region: ${opt:region, 'eu-west-1'}
+  stage: 'stage'
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - dynamodb:DescribeTable
+            - dynamodb:PutItem
+          Resource:
+            - Fn::GetAtt:
+              - TemperatureTable
+              - Arn
+
+custom:
+  pythonRequirements:
+    usePoetry: true
+    layer: true
+
+  prune:
+    automatic: true
+    includeLayers: true
+    number: 3
+
+  tables:
+    temperature_table:
+      name: "serverless-endpoints.temperature"
+
+resources:
+  Resources:
+    TemperatureTable:
+      Type: AWS::DynamoDB::Table
+      DeletionPolicy: Delete
+      UpdateReplacePolicy: Retain
+      Properties:
+        TableName: ${self:custom.tables.temperature_table.name}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: date
+            AttributeType: S
+          - AttributeName: time
+            AttributeType: S
+        KeySchema:
+          - AttributeName: date
+            KeyType: HASH
+          - AttributeName: time
+            KeyType: RANGE
+
+functions:
+  temperature_logger:
+    handler: serverless_endpoints.endpoints.temperature_logger.handler
+    layers:
+      - Ref: PythonRequirementsLambdaLayer
+    events:
+      - httpApi:
+          path: /{proxy+}
+          method: ANY
+
+plugins:
+  - serverless-python-requirements
+  - serverless-prune-plugin
