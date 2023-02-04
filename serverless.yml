@@ -21,6 +21,11 @@ provider:
             - Fn::GetAtt:
               - TemperatureTable
               - Arn
+  httpApi:
+    authorizers:
+      apiTokenAuthorizer:
+        type: request
+        functionName: apiTokenAuthorizer
 
 custom:
   pythonRequirements:
@@ -57,14 +62,22 @@ resources:
             KeyType: RANGE
 
 functions:
-  temperature_logger:
-    handler: serverless_endpoints.endpoints.temperature_logger.handler
+  serverless-endpoints:
+    handler: serverless_endpoints.endpoints.all.handler
     layers:
       - Ref: PythonRequirementsLambdaLayer
     events:
       - httpApi:
           path: /{proxy+}
           method: ANY
+          authorizer:
+            name: apiTokenAuthorizer
+  apiTokenAuthorizer:
+    handler: serverless_endpoints.authorizer.handler
+    layers:
+      - Ref: PythonRequirementsLambdaLayer
+    environment:
+      SERVERLESS_API_TOKEN: ${param:api_token}
 
 plugins:
   - serverless-python-requirements
