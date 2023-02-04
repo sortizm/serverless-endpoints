@@ -1,13 +1,15 @@
 import json
 from logging import Logger
 
-from aws_lambda_powertools.event_handler.api_gateway import BaseRouter, Response
+from aws_lambda_powertools.event_handler.api_gateway import Response
 from aws_lambda_powertools.event_handler.exceptions import NotFoundError
 
+from serverless_endpoints import app
 from serverless_endpoints.logger import get_logger
 
 
-def handle_exception(ex: Exception, app: BaseRouter):
+@app.exception_handler(Exception)
+def handle_exception(ex: Exception):
     metadata = {"path": app.current_event.path}
     logger: Logger = get_logger()
     logger.info(metadata)
@@ -31,3 +33,9 @@ def handle_exception(ex: Exception, app: BaseRouter):
             content_type="application/json",
             body=json.dumps(error_response),
         )
+
+
+def handler(event, context):
+    import serverless_endpoints.endpoints.temperature  # noqa
+
+    return app.resolve(event, context)
